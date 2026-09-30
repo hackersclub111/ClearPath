@@ -1,0 +1,661 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ClearPath: Cognitive Clarity Layer — Interactive Judge Demo</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #090D16;
+      --card-bg: #111827;
+      --border: #1F2937;
+      --primary: #38BDF8;
+      --primary-dark: #0284C7;
+      --accent: #6366F1;
+      --accent-purple: #8B5CF6;
+      --success: #10B981;
+      --warning: #F59E0B;
+      --text-main: #F9FAFB;
+      --text-muted: #9CA3AF;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Inter', -apple-system, sans-serif; }
+    body { background-color: var(--bg); color: var(--text-main); min-height: 100vh; display: flex; flex-direction: column; }
+    
+    header {
+      background: rgba(17, 24, 39, 0.8);
+      backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--border);
+      padding: 16px 32px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+    .brand { display: flex; align-items: center; gap: 12px; }
+    .brand-icon {
+      width: 36px; height: 36px; border-radius: 10px;
+      background: linear-gradient(135deg, var(--primary), var(--accent));
+      display: flex; align-items: center; justify-content: center;
+      font-size: 20px; font-weight: 800; color: #fff;
+    }
+    .brand h1 { font-size: 20px; font-weight: 800; letter-spacing: -0.5px; }
+    .brand span { font-size: 13px; color: var(--primary); font-weight: 600; margin-left: 8px; background: rgba(56, 189, 248, 0.15); padding: 3px 8px; border-radius: 6px; }
+    
+    .badge-bar { display: flex; gap: 10px; align-items: center; }
+    .badge { font-size: 12px; padding: 6px 12px; border-radius: 8px; font-weight: 600; text-decoration: none; display: inline-flex; align-items: center; gap: 6px; }
+    .badge-rc { background: rgba(239, 68, 68, 0.15); color: #F87171; border: 1px solid rgba(239, 68, 68, 0.3); }
+    .badge-oss { background: rgba(16, 185, 129, 0.15); color: #34D399; border: 1px solid rgba(16, 185, 129, 0.3); }
+
+    .main-container {
+      flex: 1;
+      display: grid;
+      grid-template-columns: 440px 1fr;
+      gap: 32px;
+      padding: 32px;
+      max-width: 1400px;
+      margin: 0 auto;
+      width: 100%;
+    }
+
+    /* Device Mockup */
+    .device-wrapper {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+    .phone-frame {
+      width: 380px;
+      height: 760px;
+      background: #000;
+      border: 12px solid #1E293B;
+      border-radius: 48px;
+      box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.7), 0 0 0 1px rgba(255, 255, 255, 0.1);
+      position: relative;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+    }
+    .notch {
+      width: 120px;
+      height: 24px;
+      background: #1E293B;
+      position: absolute;
+      top: 0;
+      left: 50%;
+      transform: translateX(-50%);
+      border-bottom-left-radius: 16px;
+      border-bottom-right-radius: 16px;
+      z-index: 50;
+    }
+    .screen-content {
+      flex: 1;
+      background: #F3F4F6;
+      color: #1F2937;
+      padding: 40px 16px 20px 16px;
+      overflow-y: auto;
+      position: relative;
+    }
+
+    /* Floating Clarity Pill */
+    .floating-pill {
+      position: absolute;
+      right: 12px;
+      top: 360px;
+      background: linear-gradient(135deg, #1E1B4B, #312E81);
+      border: 2px solid #6366F1;
+      color: #FFF;
+      padding: 10px 16px;
+      border-radius: 30px;
+      font-size: 13px;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      cursor: pointer;
+      box-shadow: 0 10px 25px -5px rgba(99, 102, 241, 0.5);
+      z-index: 40;
+      transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    .floating-pill:hover {
+      transform: scale(1.05);
+      box-shadow: 0 12px 30px -5px rgba(99, 102, 241, 0.8);
+    }
+
+    /* Transformed Clarity Card Overlay */
+    .clarity-overlay {
+      position: absolute;
+      bottom: 12px;
+      left: 12px;
+      right: 12px;
+      background: rgba(15, 23, 42, 0.96);
+      backdrop-filter: blur(16px);
+      border: 2px solid #38BDF8;
+      border-radius: 24px;
+      padding: 18px;
+      color: #FFF;
+      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.8);
+      z-index: 60;
+      display: none;
+      animation: slideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    @keyframes slideUp {
+      from { transform: translateY(100%); opacity: 0; }
+      to { transform: translateY(0); opacity: 1; }
+    }
+    .overlay-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 10px;
+    }
+    .overlay-badge {
+      font-size: 11px;
+      font-weight: 700;
+      background: #1E293B;
+      color: #38BDF8;
+      padding: 4px 8px;
+      border-radius: 10px;
+    }
+    .overlay-quota {
+      font-size: 11px;
+      font-weight: 700;
+      color: #34D399;
+    }
+    .overlay-close {
+      cursor: pointer;
+      font-size: 16px;
+      color: #94A3B8;
+    }
+    .overlay-summary {
+      font-size: 14.5px;
+      font-weight: 700;
+      line-height: 1.4;
+      margin-bottom: 10px;
+      color: #FFF;
+    }
+    .overlay-bullets {
+      list-style: none;
+      margin-bottom: 14px;
+    }
+    .overlay-bullets li {
+      font-size: 12.5px;
+      color: #CBD5E1;
+      margin-bottom: 5px;
+      display: flex;
+      gap: 6px;
+    }
+    .overlay-bullets li::before {
+      content: "•";
+      color: #38BDF8;
+      font-weight: bold;
+    }
+    .overlay-action-btn {
+      width: 100%;
+      background: #38BDF8;
+      color: #0F172A;
+      border: none;
+      padding: 12px;
+      border-radius: 14px;
+      font-size: 14px;
+      font-weight: 800;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      transition: background 0.2s;
+    }
+    .overlay-action-btn:hover { background: #7DD3FC; }
+
+    /* Focus Beacon */
+    .focus-beacon {
+      position: absolute;
+      border: 3px solid #38BDF8;
+      border-radius: 8px;
+      background: rgba(56, 189, 248, 0.25);
+      z-index: 35;
+      display: none;
+      pointer-events: none;
+      animation: pulse 1.5s infinite;
+    }
+    @keyframes pulse {
+      0% { transform: scale(1); opacity: 0.9; }
+      50% { transform: scale(1.08); opacity: 0.4; }
+      100% { transform: scale(1); opacity: 0.9; }
+    }
+
+    /* Cluttered Mock App UI */
+    .mock-header { background: #1E3A8A; color: #FFF; padding: 12px; border-radius: 8px; margin-bottom: 12px; font-size: 13px; font-weight: 700; }
+    .mock-banner { background: #FEE2E2; border: 1px solid #F87171; color: #991B1B; padding: 8px; border-radius: 6px; font-size: 11px; margin-bottom: 10px; }
+    .mock-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 12px; }
+    .mock-btn { background: #E5E7EB; border: 1px solid #D1D5DB; padding: 10px 6px; border-radius: 6px; font-size: 11px; text-align: center; color: #4B5563; }
+    .mock-btn-target { background: #2563EB; color: #FFF; font-weight: 700; border: none; }
+    .mock-text { font-size: 11px; color: #6B7280; line-height: 1.4; margin-bottom: 8px; }
+
+    /* Control Panel */
+    .control-panel {
+      display: flex;
+      flex-direction: column;
+      gap: 24px;
+    }
+    .card {
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 20px;
+    }
+    .card-title {
+      font-size: 16px;
+      font-weight: 700;
+      margin-bottom: 14px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .selector-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+    }
+    .select-card {
+      background: #1F2937;
+      border: 2px solid transparent;
+      border-radius: 10px;
+      padding: 12px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .select-card.active {
+      border-color: var(--primary);
+      background: rgba(56, 189, 248, 0.1);
+    }
+    .select-card h4 { font-size: 13px; margin-bottom: 4px; }
+    .select-card p { font-size: 11px; color: var(--text-muted); }
+
+    .scenario-btn-group { display: flex; gap: 8px; margin-top: 10px; }
+    .scenario-btn {
+      flex: 1; padding: 8px 12px; border-radius: 8px; font-size: 12px; font-weight: 600;
+      background: #1F2937; border: 1px solid var(--border); color: #FFF; cursor: pointer;
+    }
+    .scenario-btn.active { background: var(--primary); color: #0F172A; border-color: var(--primary); }
+
+    .onesignal-toast {
+      background: #1E293B;
+      border-left: 4px solid #E53935;
+      padding: 12px;
+      border-radius: 8px;
+      font-size: 12px;
+      margin-top: 12px;
+      display: none;
+      animation: fadeIn 0.3s;
+    }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(-5px); } to { opacity: 1; transform: translateY(0); } }
+
+    .judge-code-input {
+      width: 100%;
+      background: #1F2937;
+      border: 1px solid var(--border);
+      padding: 10px;
+      border-radius: 8px;
+      color: #FFF;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 13px;
+      margin-bottom: 8px;
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    <div class="brand">
+      <div class="brand-icon">⚡</div>
+      <div>
+        <h1>ClearPath <span>Shipaton 2026</span></h1>
+      </div>
+    </div>
+    <div class="badge-bar">
+      <span class="badge badge-rc">Powered by RevenueCat</span>
+      <span class="badge badge-oss">Student Next Gen OSS</span>
+    </div>
+  </header>
+
+  <div class="main-container">
+    <!-- Phone Simulator -->
+    <div class="device-wrapper">
+      <div class="phone-frame">
+        <div class="notch"></div>
+        
+        <!-- Live App Content -->
+        <div class="screen-content" id="screenContent">
+          <!-- Dynamic Mock Screen Injected Here -->
+        </div>
+
+        <!-- Floating ClearPath Trigger -->
+        <div class="floating-pill" id="floatingPill" onclick="triggerClarity()">
+          ⚡ Simplify
+        </div>
+
+        <!-- Focus Beacon for Target Action -->
+        <div class="focus-beacon" id="focusBeacon"></div>
+
+        <!-- Transformed Clarity Card Overlay -->
+        <div class="clarity-overlay" id="clarityOverlay">
+          <div class="overlay-header">
+            <span class="overlay-badge" id="overlayArchetypeBadge">✨ Student Mode</span>
+            <span class="overlay-quota" id="overlayQuotaText">PRO UNLIMITED</span>
+            <span class="overlay-close" onclick="closeClarity()">✕</span>
+          </div>
+          <div class="overlay-summary" id="overlaySummaryText">
+            Tuition fee payment of $420.00 is due tomorrow at 5:00 PM to avoid a late fee penalty.
+          </div>
+          <ul class="overlay-bullets" id="overlayBulletsList">
+            <li>Pay $420.00 balance before deadline</li>
+            <li>Ignore 14 other elective course registration links</li>
+          </ul>
+          <button class="overlay-action-btn" id="overlayActionBtn" onclick="executeNextAction()">
+            👉 Pay $420.00 Tuition Now
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Interactive Control Panel for Judges -->
+    <div class="control-panel">
+      <!-- Scenario Selector -->
+      <div class="card">
+        <div class="card-title">📱 1. Select Cluttered App Scenario</div>
+        <p style="font-size: 13px; color: var(--text-muted); margin-bottom: 10px;">
+          Choose an overwhelming real-world mobile interface to test how ClearPath extracts priorities:
+        </p>
+        <div class="scenario-btn-group">
+          <button class="scenario-btn active" onclick="setScenario('college')">🎓 College Fees Portal</button>
+          <button class="scenario-btn" onclick="setScenario('banking')">🏦 Senior Banking KYC</button>
+          <button class="scenario-btn" onclick="setScenario('health')">🏥 Hospital Co-Pay Bill</button>
+        </div>
+      </div>
+
+      <!-- Cognitive Profile Engine -->
+      <div class="card">
+        <div class="card-title">🧠 2. Cognitive Profile Engine (Adaptation)</div>
+        <p style="font-size: 13px; color: var(--text-muted); margin-bottom: 12px;">
+          Select a cognitive archetype to see how ClearPath transforms phrasing, typography, and choices:
+        </p>
+        <div class="selector-grid">
+          <div class="select-card active" onclick="setProfile('student')">
+            <h4>🎓 Student Mode</h4>
+            <p>Highlights deadlines, fee amounts, and course priorities.</p>
+          </div>
+          <div class="select-card" onclick="setProfile('senior')">
+            <h4>👵 Senior Friendly</h4>
+            <p>Huge buttons, zero financial jargon, high visual contrast.</p>
+          </div>
+          <div class="select-card" onclick="setProfile('adhd')">
+            <h4>⚡ ADHD Focus</h4>
+            <p>Strictly isolates the 1 immediate physical tap.</p>
+          </div>
+          <div class="select-card" onclick="setProfile('hindi')">
+            <h4>🇮🇳 Hindi Clarity</h4>
+            <p>हिन्दी सरलीकरण: Plain-language translation in Devanagari.</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- RevenueCat Monetization -->
+      <div class="card">
+        <div class="card-title">💳 3. RevenueCat Monetization & Judge Pass</div>
+        <p style="font-size: 13px; color: var(--text-muted); margin-bottom: 12px;">
+          ClearPath monetizes through RevenueCat with 5 free daily simplifications and a $4.99/mo Pro tier.
+        </p>
+        <div style="display: flex; gap: 8px; margin-bottom: 12px;">
+          <button class="scenario-btn" id="btnTogglePro" onclick="toggleProStatus()">Status: Pro Active</button>
+        </div>
+        <input type="text" class="judge-code-input" id="judgeCodeInput" value="SHIPATON2026_JUDGE">
+        <button class="scenario-btn" style="width: 100%; background: var(--accent);" onclick="applyJudgePass()">
+          ✨ Unlock Instant Devpost Judge Pass
+        </button>
+        <div id="judgePassSuccess" style="display: none; margin-top: 10px; padding: 10px; background: rgba(16, 185, 129, 0.2); border: 1px solid #10B981; border-radius: 8px; color: #34D399; font-size: 12px; font-weight: 700;">
+          ✓ SHIPATON2026_JUDGE Verified: Unlimited RevenueCat Pro Active
+        </div>
+      </div>
+
+      <!-- OneSignal Retention Journeys -->
+      <div class="card">
+        <div class="card-title">📡 4. OneSignal Mindful Retention Journeys</div>
+        <p style="font-size: 13px; color: var(--text-muted); margin-bottom: 10px;">
+          Test the automated, context-aware notification campaigns:
+        </p>
+        <div style="display: flex; gap: 8px;">
+          <button class="scenario-btn" onclick="triggerOneSignal('form')">Trigger Form Reminder</button>
+          <button class="scenario-btn" onclick="triggerOneSignal('reset')">Trigger Morning Reset</button>
+        </div>
+        <div class="onesignal-toast" id="onesignalToast">
+          <strong>OneSignal Push Delivered:</strong><br>
+          <span id="onesignalToastText">Still working on that form? Tap to simplify.</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    let currentScenario = 'college';
+    let currentProfile = 'student';
+    let isPro = true;
+    let freeQuotaRemaining = 5;
+
+    const scenarios = {
+      college: {
+        title: "NIT JSR Student Academic Portal",
+        banner: "WARNING: Late fee penalty of $50 applies after 5:00 PM tomorrow!",
+        buttons: ["View Syllabus", "Hostel Allotment", "Library Card", "Pay Tuition Fees ($420.00)", "Exam Timetable", "Elective Survey", "Mess Refund", "Faculty Directory"],
+        targetBtnIdx: 3,
+        details: "Total Outstanding Semester 5 Tuition: $420.00. Payment Gateway: HDFC / SBI. Deadline: October 01 at 5:00 PM EDT. 14 pending elective registration tasks are currently available in the queue.",
+        results: {
+          student: {
+            summary: "Semester 5 tuition fee payment of $420.00 is due tomorrow at 5:00 PM.",
+            bullets: ["Pay $420.00 before 5:00 PM to avoid $50 fine", "Ignore 14 other elective course registration links for now"],
+            action: "👉 Pay $420.00 Tuition Now"
+          },
+          senior: {
+            summary: "You have a college payment due tomorrow.",
+            bullets: ["Amount to pay: $420.00", "No extra late charge if paid today"],
+            action: "👉 TAP TO PAY $420.00"
+          },
+          adhd: {
+            summary: "Only one urgent action: Pay your tuition fee.",
+            bullets: ["Due tomorrow 5 PM ($420)"],
+            action: "👉 Pay Tuition ($420)"
+          },
+          hindi: {
+            summary: "सेमेस्टर 5 की ट्यूशन फीस $420.00 जमा करने की अंतिम तिथि कल शाम 5:00 बजे है।",
+            bullets: ["विलंब शुल्क $50 से बचने के लिए अभी भुगतान करें", "अन्य 14 ऐच्छिक लिंक्स को अभी छोड़ दें"],
+            action: "👉 अभी $420.00 का भुगतान करें"
+          }
+        }
+      },
+      banking: {
+        title: "Apex Trust Bank — Account Verification",
+        banner: "URGENT: Periodic KYC Compliance Required for Account Ending 4819",
+        buttons: ["Credit Card Offers", "Fixed Deposit Rates", "Complete Re-KYC Verification", "Branch Locator", "Loan Calculator", "Investment Portfolio"],
+        targetBtnIdx: 2,
+        details: "As per regulatory mandates, identity verification is pending. Submission of proof of address is mandatory within 7 days. Failure to comply may lead to debit freeze.",
+        results: {
+          student: {
+            summary: "Bank account KYC verification required to prevent transaction holds.",
+            bullets: ["Upload Government ID proof within 7 days", "Ignore promotional loan & credit card offers"],
+            action: "👉 Complete Re-KYC Verification"
+          },
+          senior: {
+            summary: "Your bank needs to confirm your address to keep your card working.",
+            bullets: ["Safe, official bank verification", "Ignore all loan and advertisement buttons"],
+            action: "👉 TAP HERE TO CONFIRM IDENTITY"
+          },
+          adhd: {
+            summary: "Identity verification needed.",
+            bullets: ["1-minute document check"],
+            action: "👉 Verify Identity Now"
+          },
+          hindi: {
+            summary: "खाता चालू रखने के लिए अपने पहचान पत्र (KYC) का सत्यापन करें।",
+            bullets: ["7 दिनों के भीतर पहचान पत्र अपलोड करें", "अन्य विज्ञापनों और ऋण ऑफर्स पर ध्यान न दें"],
+            action: "👉 अभी KYC सत्यापन पूरा करें"
+          }
+        }
+      },
+      health: {
+        title: "Metropolitan Healthcare Billing",
+        banner: "NOTICE: Co-pay deductible payment pending for Visit #8291",
+        buttons: ["Past Records", "Pharmacy Discounts", "Pay Outstanding Co-Pay ($35.00)", "Doctor Notes", "Schedule Follow-up"],
+        targetBtnIdx: 2,
+        details: "Billing Statement: Insurance covered $320.00. Patient responsibility is $35.00 due immediately. Disregard prior estimated itemized bills.",
+        results: {
+          student: {
+            summary: "Medical visit co-pay payment of $35.00 is ready for clearance.",
+            bullets: ["Your insurance paid $320.00", "Remaining patient share: $35.00"],
+            action: "👉 Pay $35.00 Co-Pay Now"
+          },
+          senior: {
+            summary: "Your doctor's visit bill has a $35.00 patient co-pay due.",
+            bullets: ["Insurance covered the rest ($320.00)", "Safe online credit/debit payment"],
+            action: "👉 TAP TO PAY $35.00"
+          },
+          adhd: {
+            summary: "One bill remaining: $35.00.",
+            bullets: ["Clear your clinic visit charge"],
+            action: "👉 Pay $35.00"
+          },
+          hindi: {
+            summary: "अस्पताल विज़िट का $35.00 का सह-भुगतान (Co-pay) लंबित है।",
+            bullets: ["बीमा कंपनी ने $320.00 का भुगतान कर दिया है", "मरीज़ का कुल बकाया केवल $35.00 है"],
+            action: "👉 अभी $35.00 का भुगतान करें"
+          }
+        }
+      }
+    };
+
+    function renderScreen() {
+      const s = scenarios[currentScenario];
+      const container = document.getElementById('screenContent');
+      let btnsHtml = s.buttons.map((b, idx) => {
+        const isTarget = idx === s.targetBtnIdx;
+        return `<div class="mock-btn ${isTarget ? 'mock-btn-target' : ''}" id="btn_${idx}">${b}</div>`;
+      }).join('');
+
+      container.innerHTML = `
+        <div class="mock-header">${s.title}</div>
+        <div class="mock-banner">${s.banner}</div>
+        <div class="mock-text">${s.details}</div>
+        <div class="mock-grid">${btnsHtml}</div>
+      `;
+    }
+
+    function setScenario(sc) {
+      currentScenario = sc;
+      document.querySelectorAll('.scenario-btn-group .scenario-btn').forEach(b => b.classList.remove('active'));
+      event.target.classList.add('active');
+      closeClarity();
+      renderScreen();
+    }
+
+    function setProfile(pr) {
+      currentProfile = pr;
+      document.querySelectorAll('.select-card').forEach(c => c.classList.remove('active'));
+      event.currentTarget.classList.add('active');
+      if (document.getElementById('clarityOverlay').style.display === 'block') {
+        triggerClarity();
+      }
+    }
+
+    function triggerClarity() {
+      const overlay = document.getElementById('clarityOverlay');
+      const data = scenarios[currentScenario].results[currentProfile];
+      
+      document.getElementById('overlayArchetypeBadge').innerText = 
+        currentProfile === 'student' ? '✨ Student Mode' :
+        currentProfile === 'senior' ? '👵 Senior Friendly' :
+        currentProfile === 'adhd' ? '⚡ ADHD Focus' : '🇮🇳 Hindi Clarity';
+
+      document.getElementById('overlayQuotaText').innerText = isPro ? 'PRO UNLIMITED' : `${freeQuotaRemaining} / 5 FREE`;
+      document.getElementById('overlaySummaryText').innerText = data.summary;
+      
+      const bulletsUl = document.getElementById('overlayBulletsList');
+      bulletsUl.innerHTML = data.bullets.map(b => `<li>${b}</li>`).join('');
+
+      document.getElementById('overlayActionBtn').innerText = data.action;
+
+      if (currentProfile === 'senior') {
+        document.getElementById('overlayActionBtn').style.fontSize = '17px';
+        document.getElementById('overlayActionBtn').style.padding = '16px';
+      } else {
+        document.getElementById('overlayActionBtn').style.fontSize = '14px';
+        document.getElementById('overlayActionBtn').style.padding = '12px';
+      }
+
+      overlay.style.display = 'block';
+
+      // Highlight target button on screen
+      const targetElem = document.getElementById(`btn_${scenarios[currentScenario].targetBtnIdx}`);
+      if (targetElem) {
+        const beacon = document.getElementById('focusBeacon');
+        const rect = targetElem.getBoundingClientRect();
+        const parentRect = document.querySelector('.phone-frame').getBoundingClientRect();
+
+        beacon.style.top = (rect.top - parentRect.top - 4) + 'px';
+        beacon.style.left = (rect.left - parentRect.left - 4) + 'px';
+        beacon.style.width = (rect.width + 8) + 'px';
+        beacon.style.height = (rect.height + 8) + 'px';
+        beacon.style.display = 'block';
+      }
+    }
+
+    function closeClarity() {
+      document.getElementById('clarityOverlay').style.display = 'none';
+      document.getElementById('focusBeacon').style.display = 'none';
+    }
+
+    function executeNextAction() {
+      const targetElem = document.getElementById(`btn_${scenarios[currentScenario].targetBtnIdx}`);
+      if (targetElem) {
+        targetElem.style.background = '#10B981';
+        targetElem.innerText = '✓ Completed!';
+        closeClarity();
+      }
+    }
+
+    function toggleProStatus() {
+      isPro = !isPro;
+      document.getElementById('btnTogglePro').innerText = isPro ? 'Status: Pro Active' : 'Status: Free Tier (5/day)';
+      document.getElementById('overlayQuotaText').innerText = isPro ? 'PRO UNLIMITED' : `${freeQuotaRemaining} / 5 FREE`;
+    }
+
+    function applyJudgePass() {
+      const code = document.getElementById('judgeCodeInput').value.trim();
+      if (code === 'SHIPATON2026_JUDGE') {
+        isPro = true;
+        document.getElementById('btnTogglePro').innerText = 'Status: Pro Active (Judge Pass)';
+        document.getElementById('judgePassSuccess').style.display = 'block';
+        alert('🎉 Devpost Judge Pass Verified! RevenueCat Pro Unlocked with unlimited queries.');
+      } else {
+        alert('Invalid code. Use SHIPATON2026_JUDGE');
+      }
+    }
+
+    function triggerOneSignal(type) {
+      const toast = document.getElementById('onesignalToast');
+      const text = document.getElementById('onesignalToastText');
+      if (type === 'form') {
+        text.innerText = "Still working on that college portal form? Tap ClearPath to guide you through the next required field.";
+      } else {
+        text.innerText = "Daily Cognitive Reset: You completed 3 multi-step tasks yesterday. Tap to review your focus queue.";
+      }
+      toast.style.display = 'block';
+      setTimeout(() => { toast.style.display = 'none'; }, 5000);
+    }
+
+    // Initial render
+    renderScreen();
+  </script>
+</body>
+</html>
