@@ -1,0 +1,613 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>ClearPath Winner Demo Engine v2</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; }
+    body { background: #070B14; color: #FFFFFF; width: 1920px; height: 1080px; overflow: hidden; display: flex; align-items: center; justify-content: center; position: relative; }
+    
+    .stage { width: 1920px; height: 1080px; position: relative; display: flex; align-items: center; justify-content: center; }
+    
+    /* Device Frame */
+    .phone-container {
+      width: 470px; height: 960px; background: #000; border-radius: 48px; border: 4px solid #2D3748;
+      box-shadow: 0 25px 60px rgba(0,0,0,0.8), 0 0 50px rgba(0, 242, 254, 0.2);
+      position: relative; overflow: hidden; display: flex; flex-direction: column;
+    }
+    
+    /* Android Status Bar */
+    .status-bar { height: 38px; background: #0B111E; display: flex; align-items: center; justify-content: space-between; padding: 0 24px; font-size: 13px; font-weight: 600; color: #A0AEC0; z-index: 50; }
+    .camera-hole { width: 12px; height: 12px; background: #000; border-radius: 50%; border: 1px solid #1A202C; }
+    
+    /* Phone Screen Content */
+    .phone-screen { flex: 1; background: #0F172A; position: relative; overflow: hidden; display: flex; flex-direction: column; }
+    
+    /* Cluttered Portal */
+    .portal-header { background: #1E293B; padding: 14px 18px; border-bottom: 1px solid #334155; }
+    .portal-title { font-size: 15px; font-weight: 700; color: #F8FAFC; display: flex; align-items: center; justify-content: space-between; }
+    .portal-badge { background: #DC2626; color: #FFF; font-size: 10px; font-weight: 800; padding: 2px 8px; border-radius: 12px; }
+    .portal-sub { font-size: 11px; color: #94A3B8; margin-top: 4px; }
+    
+    .portal-body { padding: 14px; display: flex; flex-direction: column; gap: 8px; overflow: hidden; flex: 1; }
+    .chaos-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+    .chaos-item { background: #1E293B; border: 1px solid #334155; border-radius: 8px; padding: 9px; font-size: 11px; color: #CBD5E1; transition: opacity 0.5s ease; }
+    .chaos-item.dimmed { opacity: 0.15; }
+    
+    .urgent-card { background: #1E293B; border: 2px solid #EF4444; border-radius: 12px; padding: 14px; margin-top: 4px; position: relative; }
+    .urgent-title { font-size: 12px; font-weight: 700; color: #FCA5A5; display: flex; justify-content: space-between; }
+    .urgent-amount { font-size: 22px; font-weight: 900; color: #FFFFFF; margin: 4px 0; }
+    .urgent-btn {
+      background: #DC2626; color: #FFF; border: none; padding: 12px; border-radius: 8px; font-size: 13px; font-weight: 800;
+      width: 100%; text-align: center; cursor: pointer; transition: all 0.3s ease; position: relative;
+    }
+    
+    /* Button Anchored Focus Beacon */
+    .urgent-btn.beacon-active {
+      outline: 4px solid #00F2FE;
+      box-shadow: 0 0 35px #00F2FE, inset 0 0 20px rgba(0, 242, 254, 0.6);
+      animation: beaconPulse 1.2s infinite alternate;
+    }
+    @keyframes beaconPulse {
+      0% { transform: scale(0.99); box-shadow: 0 0 20px #00F2FE; }
+      100% { transform: scale(1.02); box-shadow: 0 0 45px #00F2FE, inset 0 0 25px #00F2FE; }
+    }
+    
+    /* Floating Pill */
+    .floating-pill {
+      position: absolute; left: 0; top: 410px; background: linear-gradient(135deg, #00F2FE 0%, #4FACFE 100%);
+      color: #070B14; font-weight: 800; font-size: 13px; padding: 10px 16px 10px 12px; border-radius: 0 24px 24px 0;
+      box-shadow: 0 8px 24px rgba(0, 242, 254, 0.5); cursor: pointer; display: flex; align-items: center; gap: 6px;
+      z-index: 100; transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+    .floating-pill.pulse { transform: scale(1.15); box-shadow: 0 0 35px #00F2FE; }
+    
+    /* Accessibility Scan HUD Overlay */
+    .scan-hud {
+      position: absolute; inset: 0; background: rgba(7, 11, 20, 0.94); z-index: 110;
+      display: flex; flex-direction: column; justify-content: center; align-items: center; padding: 24px;
+      opacity: 0; pointer-events: none; transition: opacity 0.3s ease;
+    }
+    .scan-hud.active { opacity: 1; pointer-events: all; }
+    .hud-box {
+      width: 100%; background: #0B111E; border: 1.5px solid #00F2FE; border-radius: 14px; padding: 18px;
+      font-family: monospace; font-size: 11.5px; color: #00F2FE; line-height: 1.7; box-shadow: 0 0 35px rgba(0, 242, 254, 0.25);
+    }
+    .hud-title { font-size: 13px; font-weight: 800; color: #FFF; margin-bottom: 8px; display: flex; align-items: center; gap: 8px; }
+    .hud-spinner { width: 14px; height: 14px; border: 2px solid #00F2FE; border-top-color: transparent; border-radius: 50%; animation: spin 0.8s linear infinite; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    
+    /* Clarity Card (Slide-up Bottom Sheet) */
+    .clarity-sheet {
+      position: absolute; left: 0; right: 0; bottom: -100%; background: #131B2E; border-top: 2.5px solid #00F2FE;
+      border-radius: 28px 28px 0 0; padding: 22px; box-shadow: 0 -20px 50px rgba(0,0,0,0.85); z-index: 120;
+      transition: bottom 0.5s cubic-bezier(0.16, 1, 0.3, 1); display: flex; flex-direction: column; gap: 14px;
+    }
+    .clarity-sheet.active { bottom: 0; }
+    .sheet-handle { width: 44px; height: 4px; background: #475569; border-radius: 2px; align-self: center; margin-bottom: 4px; }
+    .sheet-badge { display: inline-block; background: rgba(0, 242, 254, 0.15); color: #00F2FE; font-size: 11px; font-weight: 800; padding: 3px 10px; border-radius: 6px; width: fit-content; }
+    .sheet-headline { font-size: 16px; font-weight: 700; color: #F8FAFC; line-height: 1.35; }
+    .sheet-priorities { display: flex; flex-direction: column; gap: 8px; }
+    .sheet-p-item { font-size: 12.5px; color: #CBD5E1; display: flex; align-items: center; gap: 8px; }
+    .sheet-btn {
+      background: linear-gradient(135deg, #00F2FE 0%, #4FACFE 100%); color: #070B14; border: none;
+      padding: 16px; border-radius: 14px; font-size: 15px; font-weight: 800; text-align: center; cursor: pointer;
+      box-shadow: 0 4px 25px rgba(0, 242, 254, 0.4); transition: transform 0.2s ease;
+    }
+    .sheet-btn:active { transform: scale(0.98); }
+    
+    /* Success Confirmed Banner */
+    .success-banner {
+      position: absolute; inset: 0; background: rgba(7, 11, 20, 0.96); z-index: 200;
+      display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 16px;
+      opacity: 0; pointer-events: none; transition: opacity 0.3s ease; text-align: center; padding: 24px;
+    }
+    .success-banner.active { opacity: 1; pointer-events: all; }
+    .check-circle { width: 72px; height: 72px; border-radius: 50%; background: #10B981; display: flex; align-items: center; justify-content: center; font-size: 36px; color: #FFF; box-shadow: 0 0 40px rgba(16, 185, 129, 0.6); }
+    
+    /* Virtual Mouse Cursor */
+    .virtual-cursor {
+      width: 28px; height: 28px; position: absolute; top: 520px; left: 850px; z-index: 999;
+      pointer-events: none; transition: all 0.4s cubic-bezier(0.25, 1, 0.5, 1);
+    }
+    .virtual-cursor svg { filter: drop-shadow(0 4px 10px rgba(0,0,0,0.7)); }
+    .click-ring {
+      position: absolute; width: 44px; height: 44px; border-radius: 50%; border: 3px solid #00F2FE;
+      left: -8px; top: -8px; opacity: 0; transform: scale(0.5);
+    }
+    .click-ring.animate { animation: ringExpand 0.4s ease-out forwards; }
+    @keyframes ringExpand {
+      0% { transform: scale(0.5); opacity: 1; }
+      100% { transform: scale(1.6); opacity: 0; }
+    }
+    
+    /* Presentation Panels */
+    .side-panel {
+      position: absolute; width: 570px; display: flex; flex-direction: column; gap: 16px;
+      opacity: 0; transition: opacity 0.5s ease, transform 0.5s ease;
+    }
+    .panel-left { left: 80px; transform: translateX(-30px); }
+    .panel-right { right: 80px; transform: translateX(30px); }
+    .side-panel.visible { opacity: 1; transform: translateX(0); }
+    
+    .panel-card { background: #0F172A; border: 1px solid #1E293B; border-radius: 18px; padding: 26px; box-shadow: 0 10px 35px rgba(0,0,0,0.6); }
+    .panel-tag { font-size: 12px; font-weight: 800; text-transform: uppercase; letter-spacing: 1.5px; color: #00F2FE; margin-bottom: 8px; }
+    .panel-title { font-size: 28px; font-weight: 800; color: #FFFFFF; line-height: 1.25; margin-bottom: 12px; }
+    .panel-desc { font-size: 15px; color: #94A3B8; line-height: 1.55; }
+    
+    .hud-side-box {
+      background: #0B111E; border: 1px solid #334155; border-radius: 14px; padding: 20px; font-family: monospace; font-size: 13px; color: #E2E8F0; line-height: 1.7;
+    }
+    .hud-hl { color: #00F2FE; font-weight: 700; }
+    .hud-warn { color: #F59E0B; }
+    
+    /* Fullscreen Overlays */
+    .fullscreen-overlay {
+      position: absolute; inset: 0; background: #070B14; z-index: 500; display: flex; flex-direction: column;
+      align-items: center; justify-content: center; padding: 60px 100px; opacity: 0; pointer-events: none; transition: opacity 0.4s ease;
+    }
+    .fullscreen-overlay.active { opacity: 1; pointer-events: all; }
+    
+    /* Comparison Grid */
+    .compare-container { display: flex; gap: 40px; width: 100%; max-width: 1520px; align-items: stretch; }
+    .compare-card { flex: 1; background: #0F172A; border-radius: 20px; padding: 38px; border: 2px solid #1E293B; display: flex; flex-direction: column; gap: 22px; }
+    .compare-card.bad { border-color: #EF4444; }
+    .compare-card.good { border-color: #00F2FE; box-shadow: 0 0 45px rgba(0, 242, 254, 0.25); }
+    .compare-card.highlight { transform: scale(1.02); }
+    .compare-badge { font-size: 12px; font-weight: 800; padding: 5px 14px; border-radius: 20px; width: fit-content; }
+    .badge-bad { background: rgba(239, 68, 68, 0.2); color: #EF4444; }
+    .badge-good { background: rgba(0, 242, 254, 0.2); color: #00F2FE; }
+    .compare-title { font-size: 28px; font-weight: 800; }
+    .compare-list { display: flex; flex-direction: column; gap: 14px; font-size: 16.5px; color: #CBD5E1; line-height: 1.5; }
+    
+    /* Architecture Flow */
+    .arch-flow { display: flex; align-items: center; gap: 24px; margin-top: 40px; width: 100%; justify-content: center; }
+    .arch-node {
+      background: #0F172A; border: 2px solid #334155; border-radius: 16px; padding: 26px 30px;
+      text-align: center; width: 270px; box-shadow: 0 10px 25px rgba(0,0,0,0.6);
+    }
+    .arch-node.highlight { border-color: #00F2FE; box-shadow: 0 0 35px rgba(0, 242, 254, 0.35); }
+    .arch-arrow { font-size: 30px; color: #00F2FE; font-weight: 800; }
+    .arch-step-num { font-size: 11px; font-weight: 800; color: #00F2FE; text-transform: uppercase; margin-bottom: 6px; }
+    .arch-node-title { font-size: 18px; font-weight: 800; color: #FFF; margin-bottom: 6px; }
+    .arch-node-sub { font-size: 12px; color: #94A3B8; }
+    
+    /* Push Notification Banner */
+    .push-notification {
+      position: absolute; left: 16px; right: 16px; top: -140px; background: #1E293B; border: 1.5px solid #00F2FE;
+      border-radius: 16px; padding: 16px; box-shadow: 0 12px 35px rgba(0,0,0,0.8); z-index: 300;
+      display: flex; gap: 12px; align-items: center; transition: top 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    .push-notification.active { top: 48px; }
+    .push-icon { width: 38px; height: 38px; border-radius: 10px; background: linear-gradient(135deg, #00F2FE, #4FACFE); display: flex; align-items: center; justify-content: center; font-weight: 900; color: #070B14; }
+    .push-content { flex: 1; }
+    .push-app { font-size: 11px; font-weight: 700; color: #00F2FE; display: flex; justify-content: space-between; }
+    .push-msg { font-size: 12.5px; font-weight: 600; color: #F8FAFC; margin-top: 3px; }
+    
+  </style>
+</head>
+<body>
+
+  <!-- Ambient Light -->
+  <div style="position: absolute; width: 600px; height: 600px; background: radial-gradient(circle, rgba(0, 242, 254, 0.08) 0%, transparent 70%); top: -100px; left: -100px; pointer-events: none;"></div>
+  <div style="position: absolute; width: 600px; height: 600px; background: radial-gradient(circle, rgba(254, 178, 54, 0.06) 0%, transparent 70%); bottom: -100px; right: -100px; pointer-events: none;"></div>
+
+  <!-- Virtual Animated Mouse Pointer -->
+  <div class="virtual-cursor" id="cursor">
+    <svg width="28" height="28" viewBox="0 0 24 24" fill="none">
+      <path d="M4 2L20 10L12 13L9 21L4 2Z" fill="#00F2FE" stroke="#070B14" stroke-width="2" stroke-linejoin="round"/>
+    </svg>
+    <div class="click-ring" id="clickRing"></div>
+  </div>
+
+  <div class="stage">
+    
+    <!-- LEFT PANEL: Dynamic Telemetry & Explanation -->
+    <div class="side-panel panel-left visible" id="leftPanel">
+      <div class="panel-card">
+        <div class="panel-tag" id="leftTag">LIVE ANDROID SENSING</div>
+        <div class="panel-title" id="leftTitle">17 Confusing Buttons.<br>1 Action Needed.</div>
+        <div class="panel-desc" id="leftDesc">
+          Modern college portals bury critical deadlines under surveys, WiFi forms, and fees. ClearPath reads the live UI tree to find the single action that matters.
+        </div>
+      </div>
+      
+      <div class="hud-side-box" id="leftHud">
+        <div><span class="hud-hl">ENGINE:</span> ClearPath Accessibility Daemon</div>
+        <div><span class="hud-hl">STATUS:</span> <span style="color:#10B981;">MONITORING SYSTEM FOREGROUND</span></div>
+        <div><span class="hud-hl">ACTIVE VIEW:</span> College Fee & Registration Portal</div>
+        <div><span class="hud-warn">DETECTED CHAOS:</span> 17 interactive buttons, 3 tabs</div>
+      </div>
+    </div>
+
+    <!-- CENTER: Realistic Phone Mockup -->
+    <div class="phone-container" id="phoneContainer">
+      <!-- Status Bar -->
+      <div class="status-bar">
+        <span>9:41</span>
+        <div class="camera-hole"></div>
+        <span>5G &nbsp; 98%</span>
+      </div>
+
+      <!-- Phone Screen Area -->
+      <div class="phone-screen" id="phoneScreen">
+        
+        <!-- Push Notification Banner (OneSignal) -->
+        <div class="push-notification" id="pushBanner">
+          <div class="push-icon">⚡</div>
+          <div class="push-content">
+            <div class="push-app"><span>CLEARPATH</span> <span>2h ago</span></div>
+            <div class="push-msg">Still working on tuition? Tap to resume next required field.</div>
+          </div>
+        </div>
+
+        <!-- Cluttered Portal Header -->
+        <div class="portal-header" id="portalHeader">
+          <div class="portal-title">
+            <span>University Student Portal</span>
+            <span class="portal-badge">3 URGENT</span>
+          </div>
+          <div class="portal-sub">Spring 2026 Semester Account • Enrolled</div>
+        </div>
+
+        <!-- Portal Body with 17 Buttons / Clutter -->
+        <div class="portal-body" id="portalBody">
+          
+          <!-- Urgent Tuition Card -->
+          <div class="urgent-card" id="urgentCard">
+            <div class="urgent-title">
+              <span>TUITION DEADLINE</span>
+              <span style="color:#EF4444; font-size:11px;">DUE TOMORROW 5 PM</span>
+            </div>
+            <div class="urgent-amount" id="tuitionAmount">$420.00</div>
+            <button class="urgent-btn" id="payButton">PAY $420.00 TUITION NOW</button>
+          </div>
+
+          <!-- Distracting Buttons (14 Non-urgent Items) -->
+          <div class="chaos-grid" id="chaosGrid">
+            <div class="chaos-item">Campus WiFi Clearance</div>
+            <div class="chaos-item">Hostel Mess Dues ($18)</div>
+            <div class="chaos-item">Library Late Fine ($2.50)</div>
+            <div class="chaos-item">Annual Sports Fee ($15)</div>
+            <div class="chaos-item">Elective Course Survey</div>
+            <div class="chaos-item">Alumni Directory Opt-In</div>
+            <div class="chaos-item">Parking Pass Renewal</div>
+            <div class="chaos-item">Medical Waiver Form</div>
+            <div class="chaos-item">ID Card Re-issuance</div>
+            <div class="chaos-item">Bus Transit Sticker</div>
+          </div>
+        </div>
+
+        <!-- Floating ClearPath Trigger Pill -->
+        <div class="floating-pill" id="floatPill">
+          <span>⚡</span>
+          <span>Simplify</span>
+        </div>
+
+        <!-- Live Accessibility Node Scanner HUD -->
+        <div class="scan-hud" id="scanHud">
+          <div class="hud-box">
+            <div class="hud-title">
+              <div class="hud-spinner"></div>
+              <span>ACCESSIBILITY TREE SCAN</span>
+            </div>
+            <div>[OK] Parsed 48 AccessibilityNodes in 118ms</div>
+            <div>[TARGET] Button "PAY $420.00 TUITION NOW"</div>
+            <div>[BOUNDS] Rect(26, 192, 444, 244)</div>
+            <div>[SUPPRESS] 14 Non-Urgent Clutter Elements</div>
+            <div>[CONFIDENCE] 0.98 • High Urgency Flagged</div>
+          </div>
+        </div>
+
+        <!-- Clarity Card Overlay (Bottom Sheet) -->
+        <div class="clarity-sheet" id="claritySheet">
+          <div class="sheet-handle"></div>
+          <div class="sheet-badge" id="sheetBadge">COGNITIVE CLARITY LAYER</div>
+          <div class="sheet-headline" id="sheetHeadline">
+            Your $420 tuition payment is due tomorrow at 5:00 PM.
+          </div>
+          <div class="sheet-priorities" id="sheetPriorities">
+            <div class="sheet-p-item">⚠️ <span>Late fee of $50 applies after 5:00 PM</span></div>
+            <div class="sheet-p-item">⚠️ <span>Course registration locked if unpaid</span></div>
+            <div class="sheet-p-item">ℹ️ <span>14 non-urgent portal items hidden</span></div>
+          </div>
+          <button class="sheet-btn" id="sheetActionBtn">
+            Pay $420 Tuition Now →
+          </button>
+        </div>
+
+        <!-- Success Banner -->
+        <div class="success-banner" id="successBanner">
+          <div class="check-circle">✓</div>
+          <div style="font-size: 20px; font-weight: 800; color: #FFF;">Payment Completed</div>
+          <div style="font-size: 13px; color: #94A3B8;">Transaction #CP-98124 Verified<br>Assisted tap executed safely.</div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- RIGHT PANEL: Action Breakdown & Metrics -->
+    <div class="side-panel panel-right visible" id="rightPanel">
+      <div class="panel-card">
+        <div class="panel-tag" id="rightTag">TARGET ACQUISITION</div>
+        <div class="panel-title" id="rightTitle">Assisted Auto-Tap & Focus Beacon</div>
+        <div class="panel-desc" id="rightDesc">
+          Unlike static chatbots, ClearPath binds directly to physical Android screen coordinates to guide and execute verified actions.
+        </div>
+      </div>
+      
+      <div class="hud-side-box" id="rightHud">
+        <div><span class="hud-hl">TARGET ELEMENT:</span> android.widget.Button</div>
+        <div><span class="hud-hl">ACTION TYPE:</span> PERFORM_ACTION_CLICK</div>
+        <div><span class="hud-hl">CONFIRMATION:</span> Required Before Dispatch</div>
+        <div><span class="hud-hl">SAFETY GATE:</span> Zero-destructive execution lock</div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- FULLSCREEN OVERLAY 1: Why ClearPath vs ChatGPT -->
+  <div class="fullscreen-overlay" id="chatgptOverlay">
+    <div style="font-size: 14px; font-weight: 800; color: #00F2FE; letter-spacing: 2px; margin-bottom: 8px;">STRATEGIC DIFFERENTIATION</div>
+    <div style="font-size: 44px; font-weight: 900; color: #FFFFFF; margin-bottom: 36px; text-align: center;">
+      Why ClearPath Outclasses ChatGPT
+    </div>
+    
+    <div class="compare-container">
+      <div class="compare-card bad" id="chatgptCardBad">
+        <div class="compare-badge badge-bad">TRADITIONAL AI (CHATGPT / SCREENSHOTS)</div>
+        <div class="compare-title" style="color: #F87171;">Passive Text Explainer</div>
+        <div class="compare-list">
+          <div>❌ Requires user to manually take and share screenshots</div>
+          <div>❌ Generates 3 long paragraphs of dense text advice</div>
+          <div>❌ User still has to hunt through 17 confusing buttons</div>
+          <div>❌ Zero connection to Android OS or touch coordinates</div>
+          <div>❌ Cannot execute or highlight the target action</div>
+        </div>
+      </div>
+
+      <div class="compare-card good" id="clearpathCardGood">
+        <div class="compare-badge badge-good">CLEARPATH COGNITIVE LAYER</div>
+        <div class="compare-title" style="color: #00F2FE;">OS-Level Active Operator</div>
+        <div class="compare-list">
+          <div>✓ Native AccessibilityService parses live UI nodes instantly</div>
+          <div>✓ Distills screen to 1 headline + 1 primary action button</div>
+          <div>✓ Anchors pulsating Focus Beacon directly over host button</div>
+          <div>✓ Safe dual-confirmation assisted execution in 1 tap</div>
+          <div>✓ Adaptive profiles for Seniors, ADHD, and Hindi speakers</div>
+        </div>
+      </div>
+    </div>
+
+    <div id="punchline" style="margin-top: 36px; font-size: 26px; font-weight: 800; color: #00F2FE; background: #0B111E; padding: 14px 32px; border-radius: 40px; border: 1px solid #00F2FE; transition: all 0.4s ease;">
+      "ChatGPT can explain your screen. ClearPath operates on the screen."
+    </div>
+  </div>
+
+  <!-- FULLSCREEN OVERLAY 2: Architecture & Open Source -->
+  <div class="fullscreen-overlay" id="archOverlay">
+    <div style="font-size: 14px; font-weight: 800; color: #00F2FE; letter-spacing: 2px; margin-bottom: 8px;">LEAN PRODUCTION ARCHITECTURE</div>
+    <div style="font-size: 40px; font-weight: 900; color: #FFFFFF; text-align: center;">
+      How ClearPath Operates System-Wide
+    </div>
+    
+    <div class="arch-flow">
+      <div class="arch-node">
+        <div class="arch-step-num">Step 1</div>
+        <div class="arch-node-title">Accessibility Layer</div>
+        <div class="arch-node-sub">Captures live UI hierarchy & active AccessibilityNodes</div>
+      </div>
+      <div class="arch-arrow">→</div>
+      <div class="arch-node highlight">
+        <div class="arch-step-num">Step 2</div>
+        <div class="arch-node-title">Cognitive Engine</div>
+        <div class="arch-node-sub">Applies Persona (Senior / ADHD / Hindi) & extracts priority</div>
+      </div>
+      <div class="arch-arrow">→</div>
+      <div class="arch-node">
+        <div class="arch-step-num">Step 3</div>
+        <div class="arch-node-title">Next Action Engine</div>
+        <div class="arch-node-sub">Resolves exact target node & bounds on physical screen</div>
+      </div>
+      <div class="arch-arrow">→</div>
+      <div class="arch-node highlight">
+        <div class="arch-step-num">Step 4</div>
+        <div class="arch-node-title">Focus Beacon</div>
+        <div class="arch-node-sub">Draws beacon & executes verified assisted tap</div>
+      </div>
+    </div>
+
+    <div style="display: flex; gap: 40px; margin-top: 50px;">
+      <div style="background: #0F172A; border: 1px solid #1E293B; border-radius: 12px; padding: 16px 28px; text-align: center;">
+        <div style="color: #00F2FE; font-weight: 800; font-size: 14px;">REVENUECAT MONETIZATION</div>
+        <div style="color: #94A3B8; font-size: 13px; margin-top: 4px;">5 Free Simplifications/Day • $4.99/mo Pro Tier</div>
+      </div>
+      <div style="background: #0F172A; border: 1px solid #1E293B; border-radius: 12px; padding: 16px 28px; text-align: center;">
+        <div style="color: #00F2FE; font-weight: 800; font-size: 14px;">ONESIGNAL RETENTION</div>
+        <div style="color: #94A3B8; font-size: 13px; margin-top: 4px;">2-Hour Incomplete Form Reminders • Morning Cognitive Reset</div>
+      </div>
+    </div>
+
+    <div style="margin-top: 40px; text-align: center;">
+      <div style="font-size: 20px; font-weight: 800; color: #FFF;">Created by Ayush Anand • National Institute of Technology Jamshedpur</div>
+      <div style="font-size: 15px; color: #00F2FE; margin-top: 6px;">github.com/hackersclub111/ClearPath • Open Source (MIT License)</div>
+    </div>
+  </div>
+
+  <script>
+    const cursor = document.getElementById('cursor');
+    const clickRing = document.getElementById('clickRing');
+
+    function moveCursor(x, y, duration = 400) {
+      return new Promise(resolve => {
+        cursor.style.transition = `all ${duration}ms cubic-bezier(0.25, 1, 0.5, 1)`;
+        cursor.style.left = `${x}px`;
+        cursor.style.top = `${y}px`;
+        setTimeout(resolve, duration);
+      });
+    }
+
+    function clickAt(x, y) {
+      return new Promise(async resolve => {
+        await moveCursor(x, y, 400);
+        clickRing.classList.remove('animate');
+        void clickRing.offsetWidth;
+        clickRing.classList.add('animate');
+        setTimeout(resolve, 250);
+      });
+    }
+
+    // Sequence 1: Problem -> Accessibility Scan -> Clarity Card -> Focus Beacon -> Confirmed Execution (Total 29.2s)
+    window.runScene1 = async function() {
+      // 0 to 5.0s: Viewing chaotic portal
+      await new Promise(r => setTimeout(r, 5000));
+
+      // 5.0s to 7.0s: Move cursor to floating pill and click
+      await clickAt(740, 480);
+      document.getElementById('floatPill').classList.add('pulse');
+      
+      // 7.0s to 12.0s: Trigger Accessibility Scan HUD
+      await new Promise(r => setTimeout(r, 600));
+      document.getElementById('scanHud').classList.add('active');
+      await new Promise(r => setTimeout(r, 4500));
+      document.getElementById('scanHud').classList.remove('active');
+
+      // 12.0s to 16.0s: Dim chaos items and pop Clarity Sheet
+      document.querySelectorAll('.chaos-item').forEach(el => el.classList.add('dimmed'));
+      document.getElementById('claritySheet').classList.add('active');
+
+      // 16.5s to 21.0s: Focus Beacon illuminates directly over the host Pay Button
+      await new Promise(r => setTimeout(r, 4500));
+      document.getElementById('payButton').classList.add('beacon-active');
+
+      // 21.5s to 24.5s: Move to Clarity Action Button and tap
+      await new Promise(r => setTimeout(r, 4500));
+      await clickAt(960, 930);
+      document.getElementById('claritySheet').classList.remove('active');
+
+      // 24.5s to 29.2s: Show Confirmed Execution
+      await new Promise(r => setTimeout(r, 1000));
+      document.getElementById('payButton').classList.remove('beacon-active');
+      document.getElementById('successBanner').classList.add('active');
+    };
+
+    // Sequence 2: Cognitive Profiles Adaptation (Total 15.7s)
+    window.runScene2 = async function() {
+      // Ensure Scene 1 artifacts are cleared
+      document.getElementById('successBanner').classList.remove('active');
+      document.getElementById('claritySheet').classList.add('active');
+      
+      // Senior Mode (0.0 to 5.0s)
+      document.getElementById('leftTag').innerText = "COGNITIVE PROFILE: SENIOR / LOW VISION";
+      document.getElementById('leftTitle').innerText = "1.5x Scaling & High-Contrast Targets";
+      document.getElementById('leftDesc').innerText = "For older adults and visually impaired users, ClearPath eliminates tiny links and complex drop-downs, rendering massive high-contrast buttons.";
+      
+      document.getElementById('sheetHeadline').style.fontSize = "18px";
+      document.getElementById('sheetHeadline').innerHTML = "<b style='color:#FBBF24;'>URGENT:</b> Pay $420 Tuition Fee Before Tomorrow 5 PM.";
+      document.getElementById('sheetActionBtn').style.fontSize = "18px";
+      document.getElementById('sheetActionBtn').style.padding = "20px";
+      document.getElementById('sheetActionBtn').innerText = "PAY $420 TUITION NOW";
+      document.getElementById('sheetActionBtn').style.background = "#FBBF24";
+      document.getElementById('sheetActionBtn').style.color = "#000";
+
+      await new Promise(r => setTimeout(r, 5200));
+
+      // Hindi Mode (5.2 to 10.4s)
+      document.getElementById('leftTag').innerText = "COGNITIVE PROFILE: HINDI CLARITY (हिन्दी)";
+      document.getElementById('leftTitle').innerText = "Native Devanagari Screen Translation";
+      document.getElementById('leftDesc').innerText = "Apps built only in bureaucratic English are translated into pure, natural Hindi action steps.";
+
+      document.getElementById('sheetHeadline').style.fontSize = "16px";
+      document.getElementById('sheetHeadline').innerText = "आपकी सेमेस्टर फीस $420 कल शाम 5 बजे तक जमा होनी है।";
+      document.getElementById('sheetPriorities').innerHTML = `
+        <div class="sheet-p-item">⚠️ <span>देरी करने पर $50 का जुर्माना लगेगा</span></div>
+        <div class="sheet-p-item">⚠️ <span>फीस न भरने पर परीक्षा फॉर्म रुक जाएगा</span></div>
+      `;
+      document.getElementById('sheetActionBtn').innerText = "अभी फीस भरें →";
+      document.getElementById('sheetActionBtn').style.background = "linear-gradient(135deg, #00F2FE, #4FACFE)";
+      document.getElementById('sheetActionBtn').style.color = "#070B14";
+
+      await new Promise(r => setTimeout(r, 5200));
+
+      // ADHD Focus Mode (10.4 to 15.7s)
+      document.getElementById('leftTag').innerText = "COGNITIVE PROFILE: ADHD LOW-STIMULATION";
+      document.getElementById('leftTitle').innerText = "Zero Sensory Distraction";
+      document.getElementById('leftDesc').innerText = "Strips out every color flash, promotional banner, and irrelevant field, locking focus onto the one task.";
+
+      document.getElementById('sheetHeadline').innerText = "ONE TASK: Pay tuition deadline.";
+      document.getElementById('sheetPriorities').innerHTML = `
+        <div class="sheet-p-item">✓ <span>All non-urgent tabs suppressed</span></div>
+      `;
+      document.getElementById('sheetActionBtn').innerText = "Complete Payment";
+    };
+
+    // Sequence 3: Why ClearPath vs ChatGPT (Total 19.25s)
+    window.runScene3 = async function() {
+      document.getElementById('chatgptOverlay').classList.add('active');
+      
+      // 0 to 7s: Highlight traditional bad side
+      document.getElementById('chatgptCardBad').style.boxShadow = "0 0 35px rgba(239, 68, 68, 0.4)";
+      
+      // 7s to 14s: Highlight ClearPath good side
+      setTimeout(() => {
+        document.getElementById('chatgptCardBad').style.boxShadow = "none";
+        document.getElementById('clearpathCardGood').style.boxShadow = "0 0 50px rgba(0, 242, 254, 0.6)";
+      }, 7000);
+
+      // 14s to 19s: Highlight Punchline
+      setTimeout(() => {
+        document.getElementById('punchline').style.boxShadow = "0 0 40px #00F2FE";
+        document.getElementById('punchline').style.transform = "scale(1.05)";
+      }, 14000);
+    };
+
+    // Sequence 4: RevenueCat & OneSignal (Total 17.83s)
+    window.runScene4 = async function() {
+      document.getElementById('chatgptOverlay').classList.remove('active');
+      document.getElementById('claritySheet').classList.remove('active');
+      
+      document.getElementById('leftTag').innerText = "MONETIZATION & RETENTION";
+      document.getElementById('leftTitle').innerText = "RevenueCat Subscriptions & OneSignal Journeys";
+      document.getElementById('leftDesc').innerText = "Freemium economics (5 free/day, $4.99 Pro) paired with contextual push journeys that recover incomplete forms.";
+
+      document.getElementById('portalBody').innerHTML = `
+        <div style="background:#1E293B; border:2px solid #00F2FE; border-radius:16px; padding:20px; text-align:center;">
+          <div style="font-size:12px; font-weight:800; color:#00F2FE; letter-spacing:1px;">REVENUECAT PAYWALL</div>
+          <div style="font-size:22px; font-weight:900; color:#FFF; margin:8px 0;">ClearPath Pro</div>
+          <div style="font-size:13px; color:#94A3B8; margin-bottom:16px;">Unlimited cognitive transformations & edge models</div>
+          <div id="monthlyOption" style="background:#0F172A; border-radius:10px; padding:12px; margin-bottom:10px; font-size:14px; font-weight:700; color:#00F2FE; border:1.5px solid #00F2FE; cursor:pointer;">
+            Monthly: $4.99 / mo
+          </div>
+          <div style="background:#0F172A; border-radius:10px; padding:12px; font-size:14px; font-weight:700; color:#FFF; border:1px solid #334155;">
+            Annual: $39.99 / yr (Save 33%)
+          </div>
+          <div id="proBadge" style="display:none; margin-top:10px; background:rgba(16,185,129,0.2); border:1px solid #10B981; color:#10B981; padding:6px; border-radius:8px; font-size:12px; font-weight:800;">
+            ✓ clearpath_pro UNLOCKED
+          </div>
+          <div style="font-size:11px; color:#A0AEC0; margin-top:10px;">Free Quota: 5 of 5 Simplifications/Day</div>
+        </div>
+      `;
+
+      await new Promise(r => setTimeout(r, 4500));
+      // Click Monthly Pro option
+      await clickAt(960, 480);
+      document.getElementById('monthlyOption').style.background = "rgba(0, 242, 254, 0.2)";
+      document.getElementById('proBadge').style.display = "block";
+
+      await new Promise(r => setTimeout(r, 2500));
+
+      // Trigger OneSignal Push Notification sliding in
+      document.getElementById('pushBanner').classList.add('active');
+      await new Promise(r => setTimeout(r, 3500));
+      await clickAt(960, 150);
+      await new Promise(r => setTimeout(r, 600));
+      document.getElementById('pushBanner').classList.remove('active');
+    };
+
+    // Sequence 5: Architecture & Outro (Total 12.89s)
+    window.runScene5 = async function() {
+      document.getElementById('archOverlay').classList.add('active');
+    };
+  </script>
+</body>
+</html>

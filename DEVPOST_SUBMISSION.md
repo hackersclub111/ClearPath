@@ -13,7 +13,7 @@
 - **License:** MIT License (Open Source)
 - **GitHub Repository:** https://github.com/hackersclub111/ClearPath
 - **GitHub Release v1.0.0:** https://github.com/hackersclub111/ClearPath/releases/tag/v1.0.0
-- **Master Demo Video:** `ClearPath_Winner_Demo.mp4` (1920x1080 Full HD, 126s, Studio Neural Narration)
+- **Master Demo Video:** `ClearPath_Winner_Demo.mp4` (1920x1080 Full HD, 95s, Studio Neural Narration)
 - **Download Demo Video:** https://github.com/hackersclub111/ClearPath/releases/download/v1.0.0/ClearPath_Winner_Demo.mp4
 - **Interactive Browser Demo:** https://github.com/hackersclub111/ClearPath/releases/download/v1.0.0/ClearPath_Judge_Demo.html
 - **Devpost Judge Bypass Code:** `SHIPATON2026_JUDGE`

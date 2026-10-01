@@ -30,3 +30,10 @@ temp_video_build/
 /phone_screen*.png
 /screen.png
 /window_dump.xml
+frame_*.png
+test_*.png
+*.webm
+playwright_recordings/
+audio_tracks_v2/
+dump.xml
+test_video/
