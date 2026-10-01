@@ -140,7 +140,7 @@ dependencies {
     implementation("androidx.work:work-runtime:2.11.2")
 
     // RevenueCat Mobile In-App Purchases & Subscriptions (Hackathon Sponsor)
-    implementation("com.revenuecat.purchases:purchases:8.12.0")
+    implementation("com.revenuecat.purchases:purchases:10.23.2")
 
     // OneSignal Push & Re-engagement Journeys (Hackathon Sponsor)
     implementation("com.onesignal:OneSignal:5.1.28")
